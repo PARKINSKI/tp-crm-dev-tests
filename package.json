@@ -1,0 +1,33 @@
+{
+  "name": "tp-crm-tests",
+  "version": "1.0.0",
+  "description": "Automated end-to-end and regression tests for the tp-crm application",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:debug": "playwright test --debug",
+    "test:smoke": "playwright test tests/smoke",
+    "test:presets": "playwright test tests/presets",
+    "test:regression": "playwright test",
+    "typecheck": "tsc --noEmit",
+    "report": "playwright show-report"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PARKINSKI/tp-crm-tests.git"
+  },
+  "keywords": [
+    "playwright",
+    "e2e",
+    "tests"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^22.20.2",
+    "typescript": "^5.9.3"
+  }
+}
