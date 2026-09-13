@@ -44,6 +44,7 @@ reported as passed.
 | `BASE_URL`            | `http://localhost:5175` | URL of the application under test (local or staging — never hardcode production) |
 | `CLIENT_PRESET`       | `demo`                  | Expected preset: `demo`, `logisticsDemo`, `fieldServiceDemo`, `wasteDemo` |
 | `DATA_MODE`           | `mock`                  | `mock` or `supabase` — must match the app's `VITE_DATA_MODE` |
+| `PROD_BUILD`          | unset                   | `1`/`true` when `BASE_URL` serves a production build — enables the developer-text regression (dev-only UI is hidden in prod) |
 | `E2E_OWNER_EMAIL` / `E2E_OWNER_PASSWORD`       | unset | Owner account (supabase mode) — unlocks authenticated read + write coverage |
 | `E2E_ADMIN_*`, `E2E_MANAGER_*`, `E2E_OFFICE_*` | unset | Role-specific accounts for the permission matrix |
 | `E2E_FIELD_*`         | unset                   | Field-user account for driver-workflow coverage |
@@ -138,7 +139,9 @@ tests/
   dispatch/       route planner panels + map
   documents/      list + detail; WTN (wasteDemo); lifecycle (supabase)
   reports/        period/report tabs, charts — mock vs live implementations
-  settings/       all configuration sections
+  settings/       all configuration sections (incl. About)
+  branding/       co-branding: Powered-by credit, org identity, branding
+                  settings UI, role access, persistence + reset (supabase)
   notifications/  bell, dropdown, filters, item actions
   communications/ customer comms tab + failed/retry flow (supabase)
   fleet/          vehicles + field users lists
@@ -176,7 +179,8 @@ CI — remove `test.fail()` once the app is fixed:
 
 - `regression/raw-enums` — New Booking drop-off select renders the raw key
   `serviceLocation` as its placeholder option.
-- `accessibility/a11y` — app modals lack `role="dialog"`/accessible names.
+- `accessibility/a11y` — app modals lack `role="dialog"`/accessible names;
+  OrganisationBranding labels lack `htmlFor` wiring.
 
 ## CI readiness
 

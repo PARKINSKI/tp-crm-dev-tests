@@ -1,0 +1,300 @@
+import type { Page } from '@playwright/test';
+import { env, isSupabase, type RoleKey } from '../../config/env';
+import { expect, test } from '../../fixtures/base';
+import { SettingsPage } from '../../pages/SettingsPage';
+import { loginAs, requireSupabase } from '../../utils/auth';
+import { expectNoAppError } from '../../utils/errors';
+
+/**
+ * Co-branding coverage: the client organisation is the visual identity;
+ * "Powered by TP Interactive" remains as the subtle vendor credit.
+ */
+
+const POWERED_BY = /Powered by\s+TP Interactive/i;
+
+/**
+ * Colour inputs in Organisation Branding. Labels are plain <label> elements
+ * without htmlFor (documented a11y gap), so locate the input immediately
+ * following its label text.
+ */
+function brandingInput(page: Page, label: string) {
+  return page
+    .getByText(label, { exact: true })
+    .locator('xpath=following-sibling::input[1]');
+}
+
+test.describe('co-branding', { tag: ['@branding', '@regression'] }, () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAs(page, 'owner');
+  });
+
+  test('"Powered by" vendor credit is visible in the app shell', async ({
+    appShell,
+    page,
+  }) => {
+    await appShell.goto('/');
+    await expectNoAppError(page);
+
+    await expect(
+      appShell.sidebar.getByText(POWERED_BY),
+    ).toBeVisible();
+  });
+
+  test('"Powered by" appears on the sign-in page', async ({ page }) => {
+    test.skip(!isSupabase, 'mock mode redirects /login into the app');
+    await page.goto('/login');
+    await expect(
+      page.getByRole('button', { name: 'Sign in', exact: true }),
+    ).toBeVisible();
+    await expect(page.getByText(POWERED_BY)).toBeVisible();
+  });
+
+  test('organisation identity is primary in the app shell', async ({
+    appShell,
+    page,
+    preset,
+  }) => {
+    await appShell.goto('/');
+
+    await expect(appShell.organisationName).toBeVisible();
+    await expect(appShell.productName).toBeVisible();
+
+    if (isSupabase) {
+      // Seeded E2E org name is environment-specific — assert the brand block
+      // leads with an organisation, not the product name.
+      const org = (await appShell.organisationName.textContent())?.trim();
+      const product = (await appShell.productName.textContent())?.trim();
+      expect(org, 'organisation name is populated').toBeTruthy();
+      expect(org).not.toBe(product);
+    } else {
+      await expect(appShell.organisationName).toHaveText(
+        preset.organisationName,
+      );
+      await expect(appShell.productName).toHaveText(preset.productName);
+    }
+  });
+
+  test('Branding settings shows customer-facing controls', async ({
+    settings,
+    page,
+    preset,
+  }) => {
+    await settings.goto();
+    await settings.selectSection('Branding');
+    await expectNoAppError(page);
+
+    if (isSupabase) {
+      await expect(
+        page.getByText('Organisation Branding', { exact: true }),
+      ).toBeVisible();
+      for (const label of [
+        'Organisation Logo',
+        'Primary Colour',
+        'Accent Colour',
+        'Secondary Colour',
+        'Preview',
+      ]) {
+        await expect(
+          page.getByText(label, { exact: true }).first(),
+          `label "${label}"`,
+        ).toBeVisible();
+      }
+      // Owner: management controls + colour inputs enabled.
+      await expect(brandingInput(page, 'Primary Colour')).toBeEnabled();
+      await expect(
+        page.getByRole('button', { name: 'Save Branding' }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole('button', { name: 'Reset to defaults' }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole('button', { name: 'Upload Logo' }),
+      ).toBeVisible();
+      // The preview carries the vendor credit.
+      await expect(page.getByText(POWERED_BY).last()).toBeVisible();
+      return;
+    }
+
+    // Mock mode: read-only preview card of the fictional org's branding.
+    await expect(
+      page.getByText('Organisation Branding', { exact: true }),
+    ).toBeVisible();
+    await settings.expectRowValue('Organisation', preset.organisationName);
+    await settings.expectRowValue('Primary Colour', preset.primaryColour);
+    await expect(
+      page.getByText(/customisation is available in live mode/i),
+    ).toBeVisible();
+    // No edit controls in demo mode.
+    await expect(
+      page.getByRole('button', { name: 'Save Branding' }),
+    ).toHaveCount(0);
+  });
+
+  test('About section shows product, version and vendor', async ({
+    settings,
+    page,
+    preset,
+  }) => {
+    await settings.goto();
+    await settings.selectSection('About');
+
+    await settings.expectRowValue('Product', preset.productName);
+    await settings.expectRowValue('Vendor', POWERED_BY);
+    if (!isSupabase) {
+      await settings.expectRowValue('Organisation', preset.organisationName);
+    }
+  });
+
+  /**
+   * The app gates developer diagnostics behind import.meta.env.DEV — the
+   * 'Active Preset' badge and VITE_* instructions only render on a dev
+   * server. This assertion therefore only runs against production builds
+   * (PROD_BUILD=1, e.g. staging). Note: a mock-mode prod build refuses to
+   * boot, so this check is meaningful only in supabase mode.
+   */
+  test('no developer implementation details on Settings', async ({
+    settings,
+    page,
+  }) => {
+    test.skip(
+      !env.isProdBuild || !isSupabase,
+      'requires a production build running supabase mode (PROD_BUILD=1 DATA_MODE=supabase)',
+    );
+
+    await settings.goto();
+    // The dev-instructions paragraph only renders in dev builds; also check
+    // every section for leaked internals.
+    const text = await settings.main.innerText();
+    for (const token of [
+      'VITE_CLIENT_PRESET',
+      'VITE_DATA_MODE',
+      'VITE_SUPABASE',
+      'src/config/clients/',
+      'Active Preset',
+      '.env.local',
+    ]) {
+      expect(
+        text.includes(token),
+        `developer detail "${token}" exposed in Settings`,
+      ).toBe(false);
+    }
+  });
+});
+
+test.describe('branding role access', { tag: ['@branding', '@admin'] }, () => {
+  const EDIT_ROLES: RoleKey[] = ['owner', 'admin'];
+  const READ_ONLY_ROLES: RoleKey[] = ['manager', 'office', 'viewer', 'fieldUser'];
+
+  for (const role of EDIT_ROLES) {
+    test(`${role} can edit organisation branding`, async ({ page }) => {
+      requireSupabase();
+      await loginAs(page, role);
+      const settings = new SettingsPage(page);
+      await settings.goto();
+      await settings.selectSection('Branding');
+
+      await expect(brandingInput(page, 'Primary Colour')).toBeEnabled();
+      await expect(
+        page.getByRole('button', { name: 'Save Branding' }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole('button', { name: 'Upload Logo' }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole('button', { name: 'Reset to defaults' }),
+      ).toBeVisible();
+    });
+  }
+
+  for (const role of READ_ONLY_ROLES) {
+    test(`${role} sees read-only branding`, async ({ page }) => {
+      requireSupabase();
+      await loginAs(page, role);
+      const settings = new SettingsPage(page);
+      await settings.goto();
+      await settings.selectSection('Branding');
+
+      await expect(brandingInput(page, 'Primary Colour')).toBeDisabled();
+      await expect(
+        page.getByRole('button', { name: 'Save Branding' }),
+      ).toHaveCount(0);
+      await expect(
+        page.getByRole('button', { name: 'Upload Logo' }),
+      ).toHaveCount(0);
+      await expect(
+        page.getByRole('button', { name: 'Reset to defaults' }),
+      ).toHaveCount(0);
+      await expect(
+        page.getByText(
+          'Only organisation owners and admins can change branding.',
+        ),
+      ).toBeVisible();
+    });
+  }
+});
+
+test.describe('branding persistence', { tag: ['@branding', '@regression'] }, () => {
+  const SAFE_COLOUR = '#3355aa';
+
+  test('saved branding persists across reload and resets to defaults', async ({
+    page,
+    preset,
+  }) => {
+    requireSupabase();
+    await loginAs(page, 'owner');
+    const settings = new SettingsPage(page);
+    await settings.goto();
+    await settings.selectSection('Branding');
+
+    const primary = brandingInput(page, 'Primary Colour');
+    const original = await primary.inputValue();
+
+    try {
+      await primary.fill(SAFE_COLOUR);
+      await page.getByRole('button', { name: 'Save Branding' }).click();
+      await expect(page.getByText('Branding saved.')).toBeVisible();
+
+      // Runtime application — CSS variable updates without a reload.
+      await expect
+        .poll(() =>
+          page.evaluate(() =>
+            getComputedStyle(document.documentElement)
+              .getPropertyValue('--brand-primary')
+              .trim(),
+          ),
+        )
+        .toBe(SAFE_COLOUR);
+
+      // Persisted — survives a hard refresh.
+      await page.reload();
+      await settings.waitForReady();
+      await settings.selectSection('Branding');
+      await expect(brandingInput(page, 'Primary Colour')).toHaveValue(
+        SAFE_COLOUR,
+      );
+    } finally {
+      // Restore the original value before attempting reset assertions.
+      if ((await primary.inputValue()) !== original) {
+        await primary.fill(original);
+        await page.getByRole('button', { name: 'Save Branding' }).click();
+        await expect(page.getByText('Branding saved.')).toBeVisible();
+      }
+    }
+
+    // Reset to Defaults — confirm dialog → preset fallback restored.
+    await primary.fill(SAFE_COLOUR);
+    await page.getByRole('button', { name: 'Save Branding' }).click();
+    await expect(page.getByText('Branding saved.')).toBeVisible();
+
+    page.once('dialog', (d) => void d.accept());
+    await page.getByRole('button', { name: 'Reset to defaults' }).click();
+    await expect(
+      page.getByText('Branding reset to defaults.'),
+    ).toBeVisible();
+    // Reset clears the org override — the field falls back to the preset
+    // palette value.
+    await expect(brandingInput(page, 'Primary Colour')).toHaveValue(
+      preset.primaryColour,
+    );
+  });
+});

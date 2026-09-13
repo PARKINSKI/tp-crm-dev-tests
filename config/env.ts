@@ -31,6 +31,14 @@ export interface EnvConfig {
    */
   dataMode: DataMode;
   isCI: boolean;
+  /**
+   * Set to '1'/'true' when the app under test is a production build
+   * (`vite build` / `vite preview`, staging). Dev-only content such as the
+   * 'Active Preset' badge and VITE_* instructions is hidden by the app in
+   * production builds, so the developer-text regression only asserts
+   * absence there — a dev server intentionally still shows it.
+   */
+  isProdBuild: boolean;
   /** Test user credentials per role. Never committed — set via env vars. */
   credentials: Record<RoleKey, RoleCredentials>;
 }
@@ -48,6 +56,7 @@ export const env: EnvConfig = {
   clientPreset: process.env.CLIENT_PRESET ?? 'demo',
   dataMode: readDataMode(),
   isCI: !!process.env.CI,
+  isProdBuild: /^(1|true)$/i.test(process.env.PROD_BUILD ?? ''),
   credentials: {
     owner: { email: process.env.E2E_OWNER_EMAIL, password: process.env.E2E_OWNER_PASSWORD },
     admin: { email: process.env.E2E_ADMIN_EMAIL, password: process.env.E2E_ADMIN_PASSWORD },

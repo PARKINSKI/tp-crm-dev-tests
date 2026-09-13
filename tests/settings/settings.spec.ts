@@ -15,6 +15,7 @@ const SECTION_MARKERS: Record<string, string | RegExp> = {
   Units: 'Distance Unit',
   Integrations: 'Accounting',
   Backend: 'Data Mode',
+  About: /Powered by/,
 };
 
 test.describe('settings', () => {

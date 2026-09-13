@@ -82,6 +82,25 @@ test.describe('driver workflow', () => {
     }
   });
 
+  test('co-branding renders in the mobile driver shell @driver', async ({
+    page,
+    preset,
+  }) => {
+    const home = new DriverHomePage(page);
+    await home.goto();
+    await expectNoAppError(page);
+
+    // Organisation name leads the mobile banner; bottom nav intact.
+    const banner = page.getByRole('banner');
+    await expect(banner).toBeVisible();
+    if (isSupabase) {
+      await expect(banner).toContainText(/\S/);
+    } else {
+      await expect(banner).toContainText(preset.organisationName);
+    }
+    await expect(home.driverNav).toBeVisible();
+  });
+
   test('a stop can be driven through its workflow @driver', async ({
     page,
   }) => {

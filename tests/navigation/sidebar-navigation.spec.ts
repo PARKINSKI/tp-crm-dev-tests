@@ -11,6 +11,7 @@ test.describe('sidebar navigation', () => {
     'every enabled module loads with the correct heading',
     { tag: '@smoke' },
     async ({ appShell, page, preset }) => {
+      test.setTimeout(60_000); // sequential loop over every nav item
       await appShell.goto('/');
 
       for (const item of preset.navItems) {
