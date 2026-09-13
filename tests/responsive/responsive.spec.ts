@@ -114,9 +114,22 @@ test.describe('responsive list presentation', { tag: '@responsive' }, () => {
     });
   }
 
-  test('routes: mobile card keeps route context and Dispatch action', async ({
+  test('routes: desktop actions on-screen, mobile card keeps context and Dispatch', async ({
     page,
   }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/routes');
+    const table = desktopTable(page);
+    await expect(table).toBeVisible();
+    await expect(
+      table.getByRole('button', { name: 'View', exact: true }).first(),
+    ).toBeVisible();
+    const desktopDispatch = table.getByRole('button', { name: 'Dispatch' });
+    if (await desktopDispatch.first().isVisible().catch(() => false)) {
+      await expect(desktopDispatch.first()).toBeEnabled();
+    }
+    await expectNoPageHorizontalOverflow(page, 'routes @desktop');
+
     await page.setViewportSize(MOBILE);
     await page.goto('/routes');
     const card = mobileCards(page).first();
@@ -134,23 +147,17 @@ test.describe('responsive list presentation', { tag: '@responsive' }, () => {
    * The new product design reflows columns so the operational list itself
    * fits — `.table-scroll` is only a defensive fallback, not an expected
    * scrollbar at normal desktop width.
-   *
-   * KNOWN PRODUCT DEFECT — routes: the table measures ~1288px against a
-   * ~1112px content area at 1440px (down from ~1406px pre-fix, still
-   * overflowing), so the Actions column scrolls off-screen. Expected to
-   * fail until the routes table reflows.
    */
   for (const target of [
     { name: 'customers', path: '/customers' },
     { name: 'bookings', path: '/bookings' },
     { name: 'jobs', path: '/jobs' },
-    { name: 'routes', path: '/routes', knownDefect: true },
+    { name: 'routes', path: '/routes' },
     { name: 'documents', path: '/documents' },
   ]) {
     test(`desktop ${target.name} list does not scroll internally`, async ({
       page,
     }) => {
-      if ('knownDefect' in target && target.knownDefect) test.fail();
       await page.setViewportSize({ width: 1440, height: 900 });
       await page.goto(target.path);
       await expect(desktopTable(page), `${target.name} list`).toBeVisible();
