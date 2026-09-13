@@ -3,20 +3,26 @@ import {
   CustomerDetailPage,
   CustomersPage,
 } from '../../pages/CustomersPage';
+import { loginAs } from '../../utils/auth';
 import { expectNoAppError } from '../../utils/errors';
 
 test.describe('customers', () => {
-  test('list renders with at least one customer', async ({
-    appShell,
-    page,
-  }) => {
-    const customers = new CustomersPage(page);
-    await customers.goto();
-
-    await appShell.expectPageHeading('Customers');
-    await expectNoAppError(page);
-    await customers.expectRows();
+  test.beforeEach(async ({ page }) => {
+    await loginAs(page, 'owner');
   });
+
+  test(
+    'list renders with at least one customer',
+    { tag: '@smoke' },
+    async ({ appShell, page }) => {
+      const customers = new CustomersPage(page);
+      await customers.goto();
+
+      await appShell.expectPageHeading('Customers');
+      await expectNoAppError(page);
+      await customers.expectRows();
+    },
+  );
 
   test('first customer opens with detail tabs and sections', async ({
     page,
@@ -37,6 +43,7 @@ test.describe('customers', () => {
       'Bookings',
       'Jobs',
       'Documents',
+      'Communications',
       'Notes & Activity',
     ]) {
       await expect(detail.tab(tab), `tab "${tab}"`).toBeVisible();

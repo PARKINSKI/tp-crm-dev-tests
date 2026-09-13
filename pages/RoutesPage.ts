@@ -18,6 +18,11 @@ export class RoutesPage extends ListPage {
       .locator('..');
   }
 
+  /** Supabase mode only — opens the create-route modal. */
+  get createRouteButton(): Locator {
+    return this.main.getByRole('button', { name: '+ Create Route', exact: true });
+  }
+
   async openFirstRoute(): Promise<void> {
     await this.openFirstRow();
     await this.page.waitForURL(/\/routes\/.+/);
@@ -47,8 +52,41 @@ export class RouteDetailPage extends BasePage {
       .last();
   }
 
-  /** The route map card containing the SVG map. */
+  /**
+   * The route map card (MapLibre canvas + legend). The container carries only
+   * CSS-module classes, so the canvas element is the stable structural hook.
+   */
   get mapCard(): Locator {
     return this.cardWithTitle('Route Map');
+  }
+
+  get mapCanvas(): Locator {
+    return this.mapCard.locator('canvas').first();
+  }
+
+  /** Supabase + route-planning roles only. */
+  get recalculateButton(): Locator {
+    return this.main.getByRole('button', { name: 'Recalculate Route' });
+  }
+
+  /** Editable routes only (supabase, draft/planned/ready). */
+  get addJobToRouteButton(): Locator {
+    return this.main.getByRole('button', { name: 'Add Job to Route' });
+  }
+
+  get jobToAddSelect(): Locator {
+    return this.main.getByLabel('Job to add');
+  }
+
+  get removeStopButtons(): Locator {
+    return this.main.getByRole('button', { name: 'Remove stop' });
+  }
+
+  get moveStopUpButtons(): Locator {
+    return this.main.getByRole('button', { name: 'Move Stop Up' });
+  }
+
+  get moveStopDownButtons(): Locator {
+    return this.main.getByRole('button', { name: 'Move Stop Down' });
   }
 }

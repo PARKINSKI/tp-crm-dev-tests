@@ -17,13 +17,26 @@ export class DispatchPage extends BasePage {
     ).toBeVisible();
   }
 
-  /** Side-panel title, e.g. 'Unplanned Jobs', 'Route Summary', 'Stops'. */
+  /** Side-panel title, e.g. 'Unrouted Jobs', 'Stops'. */
   panel(title: string): Locator {
     return this.main.getByText(title, { exact: true });
   }
 
-  /** The route map placeholder (an inline SVG visualisation). */
+  /**
+   * The operations map (MapLibre). Asserts the rendered canvas — the map
+   * container itself carries only a CSS-module class.
+   */
   get map(): Locator {
-    return this.main.locator('svg').first();
+    return this.main.locator('canvas').first();
+  }
+
+  /** Supabase mode only — opens the create-route modal. */
+  get createRouteButton(): Locator {
+    return this.main.getByRole('button', { name: 'Create Route', exact: true });
+  }
+
+  /** 'Add Job to Route' buttons on unrouted job cards. */
+  get addJobButtons(): Locator {
+    return this.main.getByRole('button', { name: 'Add Job to Route' });
   }
 }

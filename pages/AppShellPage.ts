@@ -34,19 +34,35 @@ export class AppShellPage extends BasePage {
     return this.logo.locator('..').locator('> div');
   }
 
-  /** Product/brand name shown under the logo, e.g. "TP Operations Platform". */
-  get productName(): Locator {
+  /**
+   * Sidebar brand block (v1): organisation name first (brandName), then the
+   * product name underneath it (brandTag).
+   */
+  get organisationName(): Locator {
     return this.brandTextContainer.locator('> div').first();
   }
 
-  /** Organisation name shown under the product name. */
-  get organisationName(): Locator {
+  /** Product/brand name under the organisation, e.g. "TP Operations Platform". */
+  get productName(): Locator {
     return this.brandTextContainer.locator('> div').nth(1);
   }
 
   /** User/account block at the bottom of the sidebar. */
   get userSection(): Locator {
     return this.signOutButton.locator('..');
+  }
+
+  /**
+   * Notification bell in the top header. Accessible name is "Notifications"
+   * or "Notifications, N unread" when unread items exist.
+   */
+  get notificationBell(): Locator {
+    return this.page.getByRole('button', { name: /^Notifications/ });
+  }
+
+  /** Bell dropdown menu (role="menu"). */
+  get notificationMenu(): Locator {
+    return this.page.getByRole('menu', { name: 'Notifications' });
   }
 
   get signOutButton(): Locator {

@@ -1,9 +1,14 @@
 import { NAV_HREFS, type NavKey } from '../../config/presets';
 import { expect, test } from '../../fixtures/base';
+import { loginAs } from '../../utils/auth';
 
 const ALL_HREFS = new Set(Object.values(NAV_HREFS));
 
 test.describe('preset navigation', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAs(page, 'owner');
+  });
+
   test('sidebar shows the expected items in the expected order', async ({
     appShell,
     preset,

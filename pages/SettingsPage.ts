@@ -40,11 +40,13 @@ export class SettingsPage extends BasePage {
   /**
    * Value cell of an info row, located by its row label, e.g.
    * rowValue('Organisation Name'). Rows are label/value sibling divs, so the
-   * value is the element after the label's parent container child.
+   * value is the element after the label's parent container child. Labels are
+   * restricted to divs — section chips (buttons) can share the same text.
    */
   rowValue(label: string): Locator {
     return this.main
       .getByText(label, { exact: true })
+      .and(this.main.locator('div'))
       .first()
       .locator('..')
       .locator('> *')

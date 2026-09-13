@@ -34,8 +34,13 @@ export class WasteTransferNotesPage extends ListPage {
     super(page);
   }
 
+  /**
+   * Opens the first note. Mock mode uses the dedicated WTN detail page;
+   * supabase mode renders generic documents, whose rows navigate straight to
+   * /documents/:id.
+   */
   async openFirstNote(): Promise<void> {
     await this.openFirstRow();
-    await this.page.waitForURL(/\/modules\/waste\/waste-transfer-notes\/.+/);
+    await this.page.waitForURL(/\/(modules\/waste\/waste-transfer-notes|documents)\/.+/);
   }
 }

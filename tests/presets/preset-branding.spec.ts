@@ -1,6 +1,12 @@
+import { isSupabase } from '../../config/env';
 import { expect, test } from '../../fixtures/base';
+import { loginAs } from '../../utils/auth';
 
 test.describe('preset branding', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAs(page, 'owner');
+  });
+
   test('sidebar shows the expected product and organisation', async ({
     appShell,
     preset,
@@ -40,11 +46,24 @@ test.describe('preset branding', () => {
   test('Settings > Branding reports the preset identity', async ({
     settings,
     preset,
+    page,
   }) => {
     await settings.goto();
     await settings.selectSection('Branding');
 
-    await settings.expectRowValue('Product Name', preset.productName);
+    if (isSupabase) {
+      // Live mode renders the editable branding form instead of info rows.
+      // (Labels aren't htmlFor-wired — locate the input next to its label.)
+      const input = page
+        .getByText('Primary Colour', { exact: true })
+        .locator('..')
+        .locator('input')
+        .first();
+      await expect(input).toHaveValue(preset.primaryColour);
+      return;
+    }
+
+    await settings.expectRowValue('Organisation', preset.organisationName);
     await settings.expectRowValue('Primary Colour', preset.primaryColour);
   });
 });

@@ -3,31 +3,39 @@ import {
   BookingDetailPage,
   BookingsPage,
 } from '../../pages/BookingsPage';
+import { loginAs } from '../../utils/auth';
 import { expectNoAppError } from '../../utils/errors';
 
 test.describe('bookings', () => {
-  test('list renders summary cards and booking rows', async ({
-    appShell,
-    page,
-    preset,
-  }) => {
-    const bookings = new BookingsPage(page);
-    await bookings.goto();
-
-    await appShell.expectPageHeading(preset.terms.booking.plural);
-    await expectNoAppError(page);
-
-    for (const label of [
-      'Awaiting Planning',
-      'Scheduled',
-      'In Progress',
-      'Completed Today',
-    ]) {
-      await expect(bookings.summaryCard(label), `summary "${label}"`).toBeVisible();
-    }
-
-    await bookings.expectRows();
+  test.beforeEach(async ({ page }) => {
+    await loginAs(page, 'owner');
   });
+
+  test(
+    'list renders summary cards and booking rows',
+    { tag: '@smoke' },
+    async ({ appShell, page, preset }) => {
+      const bookings = new BookingsPage(page);
+      await bookings.goto();
+
+      await appShell.expectPageHeading(preset.terms.booking.plural);
+      await expectNoAppError(page);
+
+      for (const label of [
+        'Awaiting Planning',
+        'Scheduled',
+        'In Progress',
+        'Completed Today',
+      ]) {
+        await expect(
+          bookings.summaryCard(label),
+          `summary "${label}"`,
+        ).toBeVisible();
+      }
+
+      await bookings.expectRows();
+    },
+  );
 
   test('a booking opens showing its core details', async ({ page }) => {
     const bookings = new BookingsPage(page);

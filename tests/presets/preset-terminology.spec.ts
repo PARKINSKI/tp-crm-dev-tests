@@ -5,6 +5,7 @@ import {
   type TermKey,
 } from '../../config/presets';
 import { expect, test } from '../../fixtures/base';
+import { loginAs } from '../../utils/auth';
 
 const HEADING_ROUTES: Partial<Record<TermKey, NavKey>> = {
   job: 'jobs',
@@ -15,6 +16,10 @@ const HEADING_ROUTES: Partial<Record<TermKey, NavKey>> = {
 };
 
 test.describe('preset terminology', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAs(page, 'owner');
+  });
+
   test('module pages use the preset wording in their headings', async ({
     appShell,
     preset,

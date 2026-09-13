@@ -1,20 +1,30 @@
+import { isSupabase } from '../../config/env';
 import { expect, test } from '../../fixtures/base';
 import {
   DocumentDetailPage,
   DocumentsPage,
   WasteTransferNotesPage,
 } from '../../pages/DocumentsPage';
+import { loginAs } from '../../utils/auth';
 import { expectNoAppError } from '../../utils/errors';
 
 test.describe('documents', () => {
-  test('list renders document records', async ({ appShell, page, preset }) => {
-    const documents = new DocumentsPage(page);
-    await documents.goto();
-
-    await appShell.expectPageHeading(preset.terms.document.plural);
-    await expectNoAppError(page);
-    await documents.expectRows();
+  test.beforeEach(async ({ page }) => {
+    await loginAs(page, 'owner');
   });
+
+  test(
+    'list renders document records',
+    { tag: '@smoke' },
+    async ({ appShell, page, preset }) => {
+      const documents = new DocumentsPage(page);
+      await documents.goto();
+
+      await appShell.expectPageHeading(preset.terms.document.plural);
+      await expectNoAppError(page);
+      await documents.expectRows();
+    },
+  );
 
   test('a document opens showing its detail sections', async ({ page }) => {
     const documents = new DocumentsPage(page);
@@ -29,9 +39,9 @@ test.describe('documents', () => {
     ).toContainText(/\S/);
 
     for (const section of [
-      'Customer Details',
-      'Quantities',
-      'Commercial',
+      'Details',
+      'Document Preview',
+      'Version History',
       'Activity',
     ]) {
       await expect(
@@ -53,6 +63,13 @@ test.describe('documents', () => {
     await wtns.expectRows();
 
     await wtns.openFirstNote();
+
+    if (isSupabase) {
+      // In supabase mode WTN detail redirects into the generic document view.
+      await expect(page).toHaveURL(/\/documents\/.+/);
+      return;
+    }
+
     await expect(
       page
         .getByRole('main')

@@ -4,13 +4,15 @@
   "description": "Automated end-to-end and regression tests for the tp-crm application",
   "private": true,
   "scripts": {
-    "test": "playwright test",
+    "test": "playwright test --grep-invert @live",
     "test:headed": "playwright test --headed",
     "test:ui": "playwright test --ui",
     "test:debug": "playwright test --debug",
-    "test:smoke": "playwright test tests/smoke",
+    "test:smoke": "playwright test --grep @smoke",
     "test:presets": "playwright test tests/presets",
-    "test:regression": "playwright test",
+    "test:regression": "playwright test --grep-invert @live",
+    "test:live": "playwright test --grep @live",
+    "test:driver": "playwright test tests/driver",
     "typecheck": "tsc --noEmit",
     "report": "playwright show-report"
   },

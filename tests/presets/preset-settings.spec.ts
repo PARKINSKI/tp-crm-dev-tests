@@ -1,7 +1,12 @@
 import { env } from '../../config/env';
 import { expect, test } from '../../fixtures/base';
+import { loginAs } from '../../utils/auth';
 
 test.describe('preset settings', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAs(page, 'owner');
+  });
+
   test('Active Preset indicator matches CLIENT_PRESET', async ({
     settings,
     preset,

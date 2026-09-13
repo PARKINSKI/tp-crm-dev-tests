@@ -1,8 +1,13 @@
 import { expect, test } from '../../fixtures/base';
 import { DashboardPage } from '../../pages/DashboardPage';
+import { loginAs } from '../../utils/auth';
 import { expectNoAppError } from '../../utils/errors';
 
 test.describe('dashboard', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAs(page, 'owner');
+  });
+
   test('renders KPI cards, route/job sections, map and attention area', async ({
     appShell,
     page,
@@ -46,7 +51,8 @@ test.describe('dashboard', () => {
     await expect(recentJobs.getByRole('table')).toBeVisible();
     await expect(recentJobs.locator('tbody tr').first()).toBeVisible();
 
+    // MapLibre renders a canvas — structural check only, no tile internals.
     const map = dashboard.sectionWithHeading("Today's Job Map");
-    await expect(map.locator('svg').first()).toBeVisible();
+    await expect(map.locator('canvas').first()).toBeVisible();
   });
 });

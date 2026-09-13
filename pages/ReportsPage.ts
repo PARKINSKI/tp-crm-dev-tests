@@ -31,13 +31,4 @@ export class ReportsPage extends BasePage {
   chartCard(title: string): Locator {
     return this.main.getByText(title, { exact: true }).locator('..');
   }
-
-  /** Selected period's date-range text, e.g. "1 Sep 2026 - 30 Sep 2026". */
-  get periodRange(): Locator {
-    return this.periodTab('This Month')
-      .locator('..')
-      .locator('..')
-      .locator('> div')
-      .nth(1);
-  }
 }

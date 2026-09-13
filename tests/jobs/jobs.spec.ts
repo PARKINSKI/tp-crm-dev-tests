@@ -1,21 +1,26 @@
 import { expect, test } from '../../fixtures/base';
 import { JobDetailPage, JobsPage } from '../../pages/JobsPage';
+import { loginAs } from '../../utils/auth';
 import { expectNoAppError } from '../../utils/errors';
 
 test.describe('jobs', () => {
-  test('list renders jobs with status filters', async ({
-    appShell,
-    page,
-    preset,
-  }) => {
-    const jobs = new JobsPage(page);
-    await jobs.goto();
-
-    await appShell.expectPageHeading(preset.terms.job.plural);
-    await expectNoAppError(page);
-    await expect(jobs.statusChip('All')).toBeVisible();
-    await jobs.expectRows();
+  test.beforeEach(async ({ page }) => {
+    await loginAs(page, 'owner');
   });
+
+  test(
+    'list renders jobs with status filters',
+    { tag: '@smoke' },
+    async ({ appShell, page, preset }) => {
+      const jobs = new JobsPage(page);
+      await jobs.goto();
+
+      await appShell.expectPageHeading(preset.terms.job.plural);
+      await expectNoAppError(page);
+      await expect(jobs.statusChip('All')).toBeVisible();
+      await jobs.expectRows();
+    },
+  );
 
   test('a job opens showing customer, site and status details', async ({
     page,
@@ -46,5 +51,8 @@ test.describe('jobs', () => {
     await expect(
       detail.cardWithTitle(preset.terms.document.plural),
     ).toBeVisible();
+
+    // Communications history is available on the job record.
+    await expect(detail.cardWithTitle('Communications')).toBeVisible();
   });
 });

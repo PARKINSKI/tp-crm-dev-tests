@@ -21,17 +21,27 @@ export default defineConfig({
   },
   projects: [
     {
+      // Core admin/back-office coverage — desktop viewport.
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+      testIgnore: /tests[\\/]driver[\\/]/,
+    },
+    {
+      // Driver workflow is mobile-first — run those specs on a phone viewport.
+      name: 'mobile-chrome',
+      use: { ...devices['Pixel 7'] },
+      testMatch: /tests[\\/]driver[\\/]/,
     },
     // Additional browsers can be enabled when needed:
     // {
     //   name: 'firefox',
     //   use: { ...devices['Desktop Firefox'] },
+    //   testIgnore: /tests[\\/]driver[\\/]/,
     // },
     // {
     //   name: 'webkit',
     //   use: { ...devices['Desktop Safari'] },
+    //   testIgnore: /tests[\\/]driver[\\/]/,
     // },
   ],
 });

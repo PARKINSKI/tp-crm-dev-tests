@@ -70,7 +70,7 @@ export interface PresetExpectations {
   id: string;
   productName: string;
   organisationName: string;
-  /** document.title applied at runtime: "<product> — <org>". */
+  /** document.title applied at runtime: "<product> - <org>" (hyphen). */
   documentTitle: string;
   /** Expected --brand-primary CSS variable value. */
   primaryColour: string;
@@ -115,7 +115,7 @@ export const CLIENT_PRESETS: Record<string, PresetExpectations> = {
     id: 'demo',
     productName: 'TP Operations Platform',
     organisationName: 'Northstar Operations Ltd',
-    documentTitle: 'TP Operations Platform — Northstar Operations Ltd',
+    documentTitle: 'TP Operations Platform - Northstar Operations Ltd',
     primaryColour: '#2e6b38',
     navItems: [
       nav('dashboard', 'Dashboard'),
@@ -135,6 +135,7 @@ export const CLIENT_PRESETS: Record<string, PresetExpectations> = {
     features: {
       ...coreFeatures,
       'Drop-Off Locations (module)': true,
+      'Xero (integration)': true,
     },
     wasteModule: false,
   },
@@ -143,7 +144,7 @@ export const CLIENT_PRESETS: Record<string, PresetExpectations> = {
     id: 'logisticsDemo',
     productName: 'TP Operations Platform',
     organisationName: 'Celtic Logistics Ltd',
-    documentTitle: 'TP Operations Platform — Celtic Logistics Ltd',
+    documentTitle: 'TP Operations Platform - Celtic Logistics Ltd',
     primaryColour: '#1d4e89',
     navItems: [
       nav('dashboard', 'Dashboard'),
@@ -178,7 +179,7 @@ export const CLIENT_PRESETS: Record<string, PresetExpectations> = {
     id: 'fieldServiceDemo',
     productName: 'TP Operations Platform',
     organisationName: 'Summit Field Services Ltd',
-    documentTitle: 'TP Operations Platform — Summit Field Services Ltd',
+    documentTitle: 'TP Operations Platform - Summit Field Services Ltd',
     primaryColour: '#5b3fa8',
     navItems: [
       nav('dashboard', 'Dashboard'),
@@ -206,7 +207,7 @@ export const CLIENT_PRESETS: Record<string, PresetExpectations> = {
     id: 'wasteDemo',
     productName: 'TP Operations Platform',
     organisationName: 'Greenway Environmental Ltd',
-    documentTitle: 'TP Operations Platform — Greenway Environmental Ltd',
+    documentTitle: 'TP Operations Platform - Greenway Environmental Ltd',
     primaryColour: '#14684a',
     navItems: [
       nav('dashboard', 'Dashboard'),
