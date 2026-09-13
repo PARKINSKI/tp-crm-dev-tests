@@ -143,6 +143,8 @@ tests/
   branding/       co-branding: Powered-by credit, org identity, branding
                   settings UI, role access, persistence + reset (supabase)
   notifications/  bell, dropdown, filters, item actions
+  responsive/     page-level horizontal overflow at 1440/1024/390px,
+                 mobile list cards, internal table scroll, modal fit
   communications/ customer comms tab + failed/retry flow (supabase)
   fleet/          vehicles + field users lists
   driver/         mobile-only driver workflow (mobile-chrome project)
@@ -177,10 +179,12 @@ tests/
 These tests use `test.fail()` so they document real defects without breaking
 CI — remove `test.fail()` once the app is fixed:
 
-- `regression/raw-enums` — New Booking drop-off select renders the raw key
-  `serviceLocation` as its placeholder option.
-- `accessibility/a11y` — app modals lack `role="dialog"`/accessible names;
-  OrganisationBranding labels lack `htmlFor` wiring.
+- `responsive/responsive` — the bookings (~1379px) and routes (~1406px)
+  tables overflow the ~1112px content area at 1440px, so `.table-scroll`
+  still scrolls internally and the Actions column is pushed off-screen.
+
+Fixed since the last audit (markers removed): `serviceLocation` raw key in
+New Booking, modal `role="dialog"` semantics, branding `htmlFor` labels.
 
 ## CI readiness
 

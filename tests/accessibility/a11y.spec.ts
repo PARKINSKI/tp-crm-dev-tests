@@ -59,15 +59,13 @@ test.describe('accessibility basics', () => {
   });
 
   /**
-   * KNOWN A11Y GAP — OrganisationBranding (Settings > Branding) renders
-   * <label> elements without htmlFor/id wiring, so getByLabel cannot
-   * associate them. Expected to fail until the app wires the labels.
-   * Supabase mode only — mock mode shows a read-only info card.
+   * Organisation Branding colour inputs must be programmatically labelled
+   * (htmlFor/id wiring). Supabase mode only — mock mode shows a read-only
+   * info card.
    */
   test('branding form controls have programmatic labels', async ({
     page,
   }) => {
-    test.fail();
     test.skip(!isSupabase, 'branding form is supabase-only');
     await loginAs(page, 'owner');
     await page.goto('/settings');
@@ -78,13 +76,8 @@ test.describe('accessibility basics', () => {
     await expect(page.getByLabel('Secondary Colour')).toBeVisible();
   });
 
-  /**
-   * KNOWN A11Y GAP — the app's modals are plain divs without dialog
-   * semantics (modalOverlay/modal CSS-module classes, no role="dialog" or
-   * accessible name). Expected to fail until modals gain dialog roles.
-   */
+  /** Modals expose role="dialog" with an accessible name. */
   test('modals expose dialog semantics', async ({ page }) => {
-    test.fail();
     await loginAs(page, 'owner');
     const customers = new CustomersPage(page);
     await customers.goto();

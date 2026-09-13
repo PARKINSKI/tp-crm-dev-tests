@@ -50,15 +50,13 @@ test.describe('raw enum labels', () => {
   }
 
   /**
-   * KNOWN PRODUCT DEFECT — New Booking > drop-off branch renders the raw
-   * terminology key `serviceLocation` as its placeholder option instead of
-   * the preset label (src/pages/NewBooking.tsx "Select a serviceLocation").
-   * Expected to fail until the app is fixed — do not remove, fix the app.
+   * Regression: New Booking > drop-off branch must render the preset
+   * terminology label ("Select a Site" etc.), not the raw key
+   * `serviceLocation`. Previously shipped broken; now fixed in the app.
    */
   test('new booking form does not render raw terminology keys', async ({
     page,
   }) => {
-    test.fail();
     await page.goto('/bookings/new');
     await page.waitForLoadState('load');
 
