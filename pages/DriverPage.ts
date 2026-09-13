@@ -57,12 +57,12 @@ export class DriverRoutePage extends BasePage {
   }
 
   /**
-   * 'Open' links on stop rows → /driver/stops/:stopId. Scoped by href: the
-   * links are nested inside row <button>s (invalid interactive nesting) and
-   * the name 'Open' also matches map-attribution anchors.
+   * 'Open' links on stop rows → /driver/stops/:stopId. Real sibling links
+   * alongside the row's map-select button; exact name avoids the map's
+   * 'OpenStreetMap contributors' attribution anchor.
    */
   get stopOpenLinks(): Locator {
-    return this.page.locator('a[href^="/driver/stops/"]');
+    return this.page.getByRole('link', { name: 'Open', exact: true });
   }
 }
 

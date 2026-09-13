@@ -179,12 +179,14 @@ tests/
 These tests use `test.fail()` so they document real defects without breaking
 CI — remove `test.fail()` once the app is fixed:
 
-- `responsive/responsive` — the bookings (~1379px) and routes (~1406px)
-  tables overflow the ~1112px content area at 1440px, so `.table-scroll`
-  still scrolls internally and the Actions column is pushed off-screen.
+- `responsive/responsive` — the routes table (~1288px) still overflows the
+  ~1112px content area at 1440px, so `.table-scroll` scrolls internally and
+  the Actions column is pushed off-screen.
 
 Fixed since the last audit (markers removed): `serviceLocation` raw key in
-New Booking, modal `role="dialog"` semantics, branding `htmlFor` labels.
+New Booking, modal `role="dialog"` semantics, branding `htmlFor` labels,
+bookings internal table scroll at 1440px, driver stop-row nested
+interactives (now a real button + sibling link).
 
 ## CI readiness
 

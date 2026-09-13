@@ -46,10 +46,8 @@ test.describe('driver workflow', () => {
     const links = route.stopOpenLinks;
     const count = await links.count();
     for (let i = 0; i < count; i++) {
-      // NOTE: the app renders 'Open' <a> inside the row <button> — nested
-      // interactive elements, so click() hits the row. Navigate via href.
-      const href = await links.nth(i).getAttribute('href');
-      await page.goto(href!);
+      await links.nth(i).click();
+      await page.waitForURL(/\/driver\/stops\/.+/);
       const stop = new DriverStopPage(page);
       const actionable = await stop.enRouteButton
         .or(stop.arrivedButton)
@@ -99,6 +97,36 @@ test.describe('driver workflow', () => {
       await expect(banner).toContainText(preset.organisationName);
     }
     await expect(home.driverNav).toBeVisible();
+  });
+
+  test('stop rows use real buttons and links @driver', async ({ page }) => {
+    const home = new DriverHomePage(page);
+    await home.goto();
+
+    if (!(await page.getByText('Next Stop').isVisible().catch(() => false))) {
+      test.skip(true, 'no route assigned to the current driver');
+    }
+    if (await home.startRouteButton.isVisible().catch(() => false)) {
+      await home.startRouteButton.click();
+    } else {
+      await home.continueRouteLink.click();
+    }
+    await page.waitForURL(/\/driver\/routes\/.+/);
+
+    // Map-select control is a real <button>; 'Open' is a real <a> link.
+    const route = new DriverRoutePage(page);
+    const openLink = route.stopOpenLinks.first();
+    await expect(openLink).toBeVisible();
+    await expect(openLink).toHaveAttribute('href', /\/driver\/stops\//);
+    await expect(
+      page.getByRole('button', { name: /^Select stop \d+/ }).first(),
+      'stop map-select is a real button',
+    ).toBeVisible();
+    // No nested interactives — the link is not inside a button.
+    expect(
+      await openLink.evaluate((el) => el.closest('button, [role="button"]')),
+      'Open link is not nested inside a button',
+    ).toBeNull();
   });
 
   test('a stop can be driven through its workflow @driver', async ({

@@ -135,14 +135,14 @@ test.describe('responsive list presentation', { tag: '@responsive' }, () => {
    * fits — `.table-scroll` is only a defensive fallback, not an expected
    * scrollbar at normal desktop width.
    *
-   * KNOWN PRODUCT DEFECTS — bookings (~1379px table) and routes (~1406px)
-   * overflow the ~1112px content area at 1440px: the container scrolls and
-   * the Actions column is pushed off-screen. Expected to fail until those
-   * tables reflow.
+   * KNOWN PRODUCT DEFECT — routes: the table measures ~1288px against a
+   * ~1112px content area at 1440px (down from ~1406px pre-fix, still
+   * overflowing), so the Actions column scrolls off-screen. Expected to
+   * fail until the routes table reflows.
    */
   for (const target of [
     { name: 'customers', path: '/customers' },
-    { name: 'bookings', path: '/bookings', knownDefect: true },
+    { name: 'bookings', path: '/bookings' },
     { name: 'jobs', path: '/jobs' },
     { name: 'routes', path: '/routes', knownDefect: true },
     { name: 'documents', path: '/documents' },
