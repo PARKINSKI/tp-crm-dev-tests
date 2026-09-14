@@ -45,14 +45,20 @@ test.describe('document lifecycle', () => {
       detail.main.getByRole('heading', { level: 1 }),
     ).toContainText(/\S/);
 
-    // Lifecycle controls — generate → mark ready → issue.
+    // Lifecycle controls — generate → mark ready → issue. 'Download PDF' is
+    // an <a download> (link role) rendered once the signed URL resolves —
+    // proving the generated version has a real rendered file attached.
     const markReady = detail.main.getByRole('button', { name: 'Mark Ready' });
     const issue = detail.main.getByRole('button', { name: 'Issue Document' });
-    const pdf = detail.main.getByRole('button', { name: 'Download PDF' });
+    const pdf = detail.main.getByRole('link', { name: 'Download PDF' });
 
-    await expect(pdf.or(detail.main.getByText(/No generated version|No rendered PDF/))).toBeVisible();
+    await expect(pdf).toBeVisible();
 
-    if (await markReady.isVisible()) await markReady.click();
+    if (await markReady.isVisible()) {
+      await markReady.click();
+      // Detail reloads after the status change — wait for Issue to appear.
+      await expect(issue).toBeVisible();
+    }
     if (await issue.isVisible()) {
       await issue.click();
       await expect(detail.main.getByText('Issued').first()).toBeVisible();
