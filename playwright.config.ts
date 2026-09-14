@@ -1,8 +1,11 @@
+// eslint-disable-next-line import/order -- must run before ./config/env reads process.env
+import './config/envLoader';
 import { defineConfig, devices } from '@playwright/test';
 import { env } from './config/env';
 
 export default defineConfig({
   testDir: './tests',
+  globalSetup: './config/globalSetup',
   timeout: 30_000,
   expect: { timeout: 10_000 },
   fullyParallel: true,

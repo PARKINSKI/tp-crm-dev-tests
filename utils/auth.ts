@@ -14,16 +14,24 @@ export function hasCredentials(role: RoleKey): boolean {
   return !!c?.email && !!c?.password;
 }
 
-/** Skips the current test when the app needs auth but no creds exist. */
+/**
+ * In mock mode: skips the test (no authentication exists).
+ * In supabase mode: fails fast when the role's credentials are missing —
+ * a Supabase run without E2E_* variables must surface a clear configuration
+ * error, never silently degrade into mock-style unauthenticated behaviour.
+ */
 export function requireCredentials(role: RoleKey): void {
   test.skip(
     !isSupabase,
     'app under test is in mock mode — no authentication required or possible',
   );
-  test.skip(
-    !hasCredentials(role),
-    `missing credentials: set E2E_${role === 'fieldUser' ? 'FIELD' : role.toUpperCase()}_EMAIL and E2E_${role === 'fieldUser' ? 'FIELD' : role.toUpperCase()}_PASSWORD`,
-  );
+  if (!hasCredentials(role)) {
+    const prefix = role === 'fieldUser' ? 'FIELD' : role.toUpperCase();
+    throw new Error(
+      `Missing credentials for role "${role}": set E2E_${prefix}_EMAIL and ` +
+        `E2E_${prefix}_PASSWORD in .env.local (gitignored) or the environment.`,
+    );
+  }
 }
 
 /** Skips the current test when the app under test is in mock mode. */

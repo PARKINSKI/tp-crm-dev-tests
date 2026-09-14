@@ -33,9 +33,10 @@ The application can run in two data modes, and the suite mirrors them via
 | `mock` (default) | `VITE_DATA_MODE=mock` | UI smoke, lists/details, presets, notifications, communications render, driver workflow (in-memory demo data). Auth is bypassed by the app. Write-path tests self-skip. |
 | `supabase` | `VITE_DATA_MODE=supabase` | Real login/logout/session/role tests, write-path coverage (customers, bookings, routes, documents), admin/role matrix. Requires `E2E_*` credentials and seeded test data — tests skip cleanly without them. |
 
-Set `DATA_MODE` to match the app. If the app runs supabase mode but the
-variables/credentials are missing, affected tests are **skipped** — never
-reported as passed.
+Set `DATA_MODE` to match the app. If the app runs supabase mode but role
+credentials are missing, affected tests **fail fast** with a clear
+`Missing credentials for role ...` error — a Supabase run must never
+degrade into mock-style unauthenticated behaviour.
 
 ## Environment variables
 
@@ -51,9 +52,18 @@ reported as passed.
 | `E2E_VIEWER_*`        | unset                   | Read-only account |
 | `CI`                  | unset                   | 2 retries, 2 workers, `.only` forbidden |
 
-Copy `.env.example` and fill in values — `.env` is gitignored and credentials
-are never committed. Variables are read from the process environment; export
-them in your shell or CI.
+Copy `.env.example` to `.env.local` and fill in values. At startup
+(`config/envLoader.ts`, imported first in `playwright.config.ts`) the
+suite loads `.env.local` then `.env` via dotenv — both are gitignored and
+credentials are never committed; `.env.example` is documentation only.
+Precedence is `process.env > .env.local > .env`, so real shell/CI
+variables always win.
+
+Every run prints a non-secret diagnostic before tests start — resolved
+`DATA_MODE`/`CLIENT_PRESET`/`BASE_URL`/`PROD_BUILD`, which env files were
+loaded, and (in supabase mode) whether each role's credential pair is
+configured. Passwords are never printed. If `DATA_MODE=supabase` does not
+appear in that line, the run is not talking to Supabase.
 
 ## Running the app under test
 
@@ -204,8 +214,11 @@ pipeline should:
 - **Everything redirects to /login** — the app is in supabase mode; set
   `DATA_MODE=supabase` and provide `E2E_OWNER_*` credentials, or run the app
   in mock mode.
-- **Auth/write tests all skipped** — expected when `E2E_*` credentials are
-  unset; they are not a failure.
+- **Suite behaves like mock while the app needs auth** — check the startup
+  `[env]` diagnostic: if it shows `DATA_MODE=mock` and `env files: (none
+  found)`, your `.env.local` is missing or misnamed.
+- **"Missing credentials for role ..."** — expected failure in supabase
+  mode when that role's `E2E_*` pair is unset; fill in `.env.local`.
 - **"couldn't be located on this site"** — postcode lookup needs network
   access to postcodes.io.
 - **Preset assertions failing** — `CLIENT_PRESET` must equal the app's
