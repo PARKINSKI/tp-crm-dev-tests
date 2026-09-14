@@ -57,16 +57,4 @@ test.describe('preset navigation', () => {
       await appShell.expectPageHeading(item.label);
     }
   });
-
-  test('Settings > Navigation lists the preset nav keys in order', async ({
-    settings,
-    preset,
-  }) => {
-    await settings.goto();
-    await settings.selectSection('Navigation');
-
-    for (const [index, item] of preset.navItems.entries()) {
-      await settings.expectRowValue(String(index + 1), item.key);
-    }
-  });
 });

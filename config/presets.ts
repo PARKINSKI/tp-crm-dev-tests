@@ -6,9 +6,9 @@ import { env } from './env';
  * These are deliberately NOT a copy of the application's client config — they
  * capture only the visible behaviour that proves a preset was applied:
  * branding, sidebar navigation (order + labels), differentiating terminology,
- * unit summaries and optional feature flags. Source of truth in the app:
- * src/config/clients/*.ts, src/components/layout/Sidebar.tsx (nav registry),
- * src/pages/Settings.tsx (row/flag labels).
+ * unit summaries and module/integration availability. Source of truth in the
+ * app: src/config/clients/*.ts, src/components/layout/Sidebar.tsx (nav
+ * registry), src/pages/Settings.tsx (Units/Integrations row labels).
  */
 
 /** Navigation keys supported by the app, and their routes. */
@@ -56,21 +56,11 @@ export interface TermPair {
 /** Terminology keys checked by the preset tests — only the differentiating ones. */
 export type TermKey = 'site' | 'job' | 'booking' | 'fieldUser' | 'document' | 'route';
 
-/** Row labels used on the Settings > Terminology section, keyed by term. */
-export const TERM_ROW_LABELS: Record<TermKey, string> = {
-  site: 'Site',
-  job: 'Job',
-  booking: 'Booking',
-  fieldUser: 'Field User',
-  document: 'Document',
-  route: 'Route',
-};
-
 export interface PresetExpectations {
   id: string;
   productName: string;
   organisationName: string;
-  /** document.title applied at runtime: "<product> - <org>" (hyphen). */
+  /** document.title applied at runtime — the product name only. */
   documentTitle: string;
   /** Expected --brand-primary CSS variable value. */
   primaryColour: string;
@@ -82,9 +72,15 @@ export interface PresetExpectations {
   units: {
     quantity: string;
     capacity: string;
+    volume: string;
+    distance: string;
   };
-  /** Settings > Features row label -> expected enabled state. */
-  features: Record<string, boolean>;
+  /**
+   * Settings > Integrations row label -> expected availability.
+   * 'Xero Accounting' renders "Available"/"Not included"; the module rows
+   * render "Included"/"Not included".
+   */
+  integrations: Record<string, boolean>;
   /** Whether the waste-compliance module is mounted for this preset. */
   wasteModule: boolean;
 }
@@ -102,12 +98,11 @@ const demoTerms: Record<TermKey, TermPair> = {
   route: { singular: 'Route', plural: 'Routes' },
 };
 
-const coreFeatures = {
-  'Waste Compliance (module)': false,
-  'Drop-Off Locations (module)': false,
-  'Xero (integration)': false,
-  'Driver App (prototype)': false,
-  'Customer Portal (prototype)': false,
+const coreIntegrations = {
+  'Xero Accounting': false,
+  'Waste Compliance': false,
+  'Drop-Off Locations': false,
+  'Driver App': false,
 };
 
 export const CLIENT_PRESETS: Record<string, PresetExpectations> = {
@@ -115,7 +110,7 @@ export const CLIENT_PRESETS: Record<string, PresetExpectations> = {
     id: 'demo',
     productName: 'TP Operations Platform',
     organisationName: 'Northstar Operations Ltd',
-    documentTitle: 'TP Operations Platform - Northstar Operations Ltd',
+    documentTitle: 'TP Operations Platform',
     primaryColour: '#2e6b38',
     navItems: [
       nav('dashboard', 'Dashboard'),
@@ -131,11 +126,16 @@ export const CLIENT_PRESETS: Record<string, PresetExpectations> = {
       nav('settings', 'Settings'),
     ],
     terms: demoTerms,
-    units: { quantity: 'Quantity (units)', capacity: 'Capacity (units)' },
-    features: {
-      ...coreFeatures,
-      'Drop-Off Locations (module)': true,
-      'Xero (integration)': true,
+    units: {
+      quantity: 'Quantity (units)',
+      capacity: 'Capacity (units)',
+      volume: 'Volume (m³)',
+      distance: 'miles',
+    },
+    integrations: {
+      ...coreIntegrations,
+      'Xero Accounting': true,
+      'Drop-Off Locations': true,
     },
     wasteModule: false,
   },
@@ -144,7 +144,7 @@ export const CLIENT_PRESETS: Record<string, PresetExpectations> = {
     id: 'logisticsDemo',
     productName: 'TP Operations Platform',
     organisationName: 'Celtic Logistics Ltd',
-    documentTitle: 'TP Operations Platform - Celtic Logistics Ltd',
+    documentTitle: 'TP Operations Platform',
     primaryColour: '#1d4e89',
     navItems: [
       nav('dashboard', 'Dashboard'),
@@ -167,10 +167,15 @@ export const CLIENT_PRESETS: Record<string, PresetExpectations> = {
       fieldUser: { singular: 'Driver', plural: 'Drivers' },
       document: { singular: 'Delivery Note', plural: 'Delivery Notes' },
     },
-    units: { quantity: 'Items (items)', capacity: 'Pallets (plt)' },
-    features: {
-      ...coreFeatures,
-      'Driver App (prototype)': true,
+    units: {
+      quantity: 'Items (items)',
+      capacity: 'Pallets (plt)',
+      volume: 'Volume (m³)',
+      distance: 'miles',
+    },
+    integrations: {
+      ...coreIntegrations,
+      'Driver App': true,
     },
     wasteModule: false,
   },
@@ -179,7 +184,7 @@ export const CLIENT_PRESETS: Record<string, PresetExpectations> = {
     id: 'fieldServiceDemo',
     productName: 'TP Operations Platform',
     organisationName: 'Summit Field Services Ltd',
-    documentTitle: 'TP Operations Platform - Summit Field Services Ltd',
+    documentTitle: 'TP Operations Platform',
     primaryColour: '#5b3fa8',
     navItems: [
       nav('dashboard', 'Dashboard'),
@@ -198,8 +203,13 @@ export const CLIENT_PRESETS: Record<string, PresetExpectations> = {
       fieldUser: { singular: 'Engineer', plural: 'Engineers' },
       document: { singular: 'Job Sheet', plural: 'Job Sheets' },
     },
-    units: { quantity: 'Hours (hours)', capacity: 'Hours (hrs)' },
-    features: coreFeatures,
+    units: {
+      quantity: 'Hours (hours)',
+      capacity: 'Hours (hrs)',
+      volume: 'Volume (m³)',
+      distance: 'miles',
+    },
+    integrations: coreIntegrations,
     wasteModule: false,
   },
 
@@ -207,7 +217,7 @@ export const CLIENT_PRESETS: Record<string, PresetExpectations> = {
     id: 'wasteDemo',
     productName: 'TP Operations Platform',
     organisationName: 'Greenway Environmental Ltd',
-    documentTitle: 'TP Operations Platform - Greenway Environmental Ltd',
+    documentTitle: 'TP Operations Platform',
     primaryColour: '#14684a',
     navItems: [
       nav('dashboard', 'Dashboard'),
@@ -231,13 +241,17 @@ export const CLIENT_PRESETS: Record<string, PresetExpectations> = {
       document: { singular: 'Waste Transfer Note', plural: 'Waste Transfer Notes' },
       route: { singular: 'Round', plural: 'Rounds' },
     },
-    units: { quantity: 'Weight (tonnes)', capacity: 'Capacity (t)' },
-    features: {
-      'Waste Compliance (module)': true,
-      'Drop-Off Locations (module)': true,
-      'Xero (integration)': true,
-      'Driver App (prototype)': true,
-      'Customer Portal (prototype)': true,
+    units: {
+      quantity: 'Weight (tonnes)',
+      capacity: 'Capacity (t)',
+      volume: 'Volume (m³)',
+      distance: 'miles',
+    },
+    integrations: {
+      'Xero Accounting': true,
+      'Waste Compliance': true,
+      'Drop-Off Locations': true,
+      'Driver App': true,
     },
     wasteModule: true,
   },

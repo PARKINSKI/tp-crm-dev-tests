@@ -24,7 +24,7 @@ test.describe(
       preset,
     }) => {
       test.skip(
-        !preset.features['Xero (integration)'],
+        !preset.integrations['Xero Accounting'],
         'xero disabled for this preset',
       );
 
@@ -49,7 +49,7 @@ test.describe(
       preset,
     }) => {
       test.skip(
-        !preset.features['Xero (integration)'],
+        !preset.integrations['Xero Accounting'],
         'xero disabled for this preset',
       );
 

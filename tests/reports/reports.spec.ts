@@ -37,7 +37,7 @@ test.describe('reports', () => {
           'Fleet & Field Users',
           'Routes',
         ];
-        if (preset.features['Xero (integration)']) tabs.push('Financial');
+        if (preset.integrations['Xero Accounting']) tabs.push('Financial');
         if (preset.wasteModule) tabs.push('Waste');
         for (const tab of tabs) {
           await expect(reports.reportTab(tab), `tab "${tab}"`).toBeVisible();
@@ -70,10 +70,42 @@ test.describe('reports', () => {
 
       // CSV export control is present in both implementations.
       await expect(
-        reports.main.getByRole('button', { name: 'Export CSV' }),
+        reports.main.getByRole('button', { name: 'Export CSV' }).first(),
       ).toBeVisible();
     },
   );
+
+  test('export produces a real CSV download', async ({ page }) => {
+    const reports = new ReportsPage(page);
+    await reports.goto();
+    await expectNoAppError(page);
+
+    if (isSupabase) {
+      // Live reports export the current table straight from the header.
+      const exportButton = reports.main
+        .getByRole('button', { name: 'Export CSV' })
+        .first();
+      await expect(exportButton).toBeEnabled();
+      const downloadPromise = page.waitForEvent('download');
+      await exportButton.click();
+      const download = await downloadPromise;
+      expect(download.suggestedFilename()).toMatch(/\.csv$/);
+      return;
+    }
+
+    // Mock reports open an export dialog first.
+    await reports.main
+      .getByRole('button', { name: 'Export CSV' })
+      .first()
+      .click();
+    const dialog = page.getByRole('dialog', { name: 'Export Report' });
+    await expect(dialog).toBeVisible();
+
+    const downloadPromise = page.waitForEvent('download');
+    await dialog.getByRole('button', { name: 'Export CSV' }).click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toMatch(/^report-.*\.csv$/);
+  });
 
   test('switching report tabs and periods updates content', async ({
     page,

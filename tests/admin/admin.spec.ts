@@ -21,9 +21,22 @@ test.describe('administration', () => {
     await expect(
       settings.main.getByRole('button', { name: 'Save Organisation' }),
     ).toBeVisible();
-    await expect(
-      settings.main.getByText('System Status'),
-    ).toBeVisible();
+
+    // System Status is a dedicated section for owner/admin.
+    await expect(settings.sectionChip('System Status')).toBeVisible();
+    await settings.selectSection('System Status');
+    for (const label of [
+      'Platform',
+      'Customer Emails',
+      'Road Routing',
+      'Xero Integration',
+      'Scheduled Processing',
+    ]) {
+      await expect(
+        settings.main.getByText(label, { exact: true }),
+        `status row "${label}"`,
+      ).toBeVisible();
+    }
 
     // Users & Roles: invite control + member table.
     await settings.selectSection('Users & Roles');
@@ -45,6 +58,19 @@ test.describe('administration', () => {
     ).toBeVisible();
   });
 
+  test('admin can view System Status', async ({ page }) => {
+    requireSupabase();
+    await loginAs(page, 'admin');
+    const settings = new SettingsPage(page);
+    await settings.goto();
+
+    await expect(settings.sectionChip('System Status')).toBeVisible();
+    await settings.selectSection('System Status');
+    await expect(
+      settings.main.getByText('Platform', { exact: true }),
+    ).toBeVisible();
+  });
+
   test('office cannot manage memberships, organisation or pricing', async ({
     page,
   }) => {
@@ -52,6 +78,9 @@ test.describe('administration', () => {
     await loginAs(page, 'office');
     const settings = new SettingsPage(page);
     await settings.goto();
+
+    // System Status is owner/admin only.
+    await expect(settings.sectionChip('System Status')).toHaveCount(0);
 
     await expect(settings.main.getByLabel('Organisation Name')).toBeDisabled();
     await expect(
@@ -75,6 +104,7 @@ test.describe('administration', () => {
     const settings = new SettingsPage(page);
     await settings.goto();
 
+    await expect(settings.sectionChip('System Status')).toHaveCount(0);
     await expect(settings.main.getByLabel('Organisation Name')).toBeDisabled();
     await expect(
       settings.main.getByRole('button', { name: 'Save Organisation' }),
@@ -95,6 +125,7 @@ test.describe('administration', () => {
     // Even if they reach Settings directly, no management controls render.
     const settings = new SettingsPage(page);
     await settings.goto();
+    await expect(settings.sectionChip('System Status')).toHaveCount(0);
     await expect(
       settings.main.getByRole('button', { name: 'Save Organisation' }),
     ).toHaveCount(0);
@@ -112,6 +143,7 @@ test.describe('administration', () => {
     await settings.goto();
 
     // canManageOrganisation = owner/admin only.
+    await expect(settings.sectionChip('System Status')).toHaveCount(0);
     await expect(settings.main.getByLabel('Organisation Name')).toBeDisabled();
     await expect(
       settings.main.getByRole('button', { name: 'Save Organisation' }),

@@ -1,4 +1,4 @@
-import { env, isSupabase } from '../../config/env';
+import { isSupabase } from '../../config/env';
 import { expect, test } from '../../fixtures/base';
 import { loginAs } from '../../utils/auth';
 
@@ -8,33 +8,20 @@ test.describe('preset settings', () => {
   });
 
   /**
-   * The 'Active Preset' badge is developer diagnostics only — the app gates
-   * it behind import.meta.env.DEV, so it renders on `vite dev` but never in
-   * production builds. If absent we assert nothing (correct prod behaviour);
-   * when present it must still match CLIENT_PRESET.
+   * The 'Active Preset' badge and other developer diagnostics were removed
+   * from the app entirely — the customer-facing UI must never render the
+   * internal preset id (demo, wasteDemo, ...).
    */
-  test('Active Preset indicator matches CLIENT_PRESET when shown', async ({
+  test('no preset identifier or developer diagnostics are rendered', async ({
     settings,
     preset,
   }) => {
     await settings.goto();
 
-    // Wait for the page header to settle before probing for the badge.
+    await expect(settings.main.getByText(/Active Preset/)).toHaveCount(0);
     await expect(
-      settings.main.getByRole('heading', { name: 'Settings' }),
-    ).toBeVisible();
-    if (!(await settings.activePresetBadge.isVisible())) {
-      test.info().annotations.push({
-        type: 'note',
-        description:
-          'Active Preset badge hidden — production build (expected)',
-      });
-      return;
-    }
-    await expect(settings.activePresetBadge).toHaveText(
-      `Active Preset: ${preset.id}`,
-    );
-    expect(preset.id).toBe(env.clientPreset);
+      settings.main.getByText(preset.id, { exact: true }),
+    ).toHaveCount(0);
   });
 
   test('Settings > Organisation reports the organisation', async ({
@@ -68,17 +55,27 @@ test.describe('preset settings', () => {
 
     await settings.expectRowValue('Quantity', preset.units.quantity);
     await settings.expectRowValue('Capacity', preset.units.capacity);
+    await settings.expectRowValue('Volume', preset.units.volume);
+    await settings.expectRowValue('Distance Unit', preset.units.distance);
   });
 
-  test('Settings > Features reports the preset feature flags', async ({
+  test('Settings > Integrations reports friendly module availability', async ({
     settings,
     preset,
   }) => {
     await settings.goto();
-    await settings.selectSection('Features');
+    await settings.selectSection('Integrations');
 
-    for (const [label, enabled] of Object.entries(preset.features)) {
-      await settings.expectRowValue(label, enabled ? 'Enabled' : 'Disabled');
+    for (const [label, enabled] of Object.entries(preset.integrations)) {
+      const expected =
+        label === 'Xero Accounting'
+          ? enabled
+            ? 'Available'
+            : 'Not included'
+          : enabled
+            ? 'Included'
+            : 'Not included';
+      await settings.expectRowValue(label, expected);
     }
   });
 });

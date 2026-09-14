@@ -44,7 +44,7 @@ reported as passed.
 | `BASE_URL`            | `http://localhost:5175` | URL of the application under test (local or staging — never hardcode production) |
 | `CLIENT_PRESET`       | `demo`                  | Expected preset: `demo`, `logisticsDemo`, `fieldServiceDemo`, `wasteDemo` |
 | `DATA_MODE`           | `mock`                  | `mock` or `supabase` — must match the app's `VITE_DATA_MODE` |
-| `PROD_BUILD`          | unset                   | `1`/`true` when `BASE_URL` serves a production build — enables the developer-text regression (dev-only UI is hidden in prod) |
+| `PROD_BUILD`          | unset                   | `1`/`true` when `BASE_URL` serves a production build — asserts `/prototype/*` routes 404 (they are dev-build only) |
 | `E2E_OWNER_EMAIL` / `E2E_OWNER_PASSWORD`       | unset | Owner account (supabase mode) — unlocks authenticated read + write coverage |
 | `E2E_ADMIN_*`, `E2E_MANAGER_*`, `E2E_OFFICE_*` | unset | Role-specific accounts for the permission matrix |
 | `E2E_FIELD_*`         | unset                   | Field-user account for driver-workflow coverage |
@@ -139,7 +139,9 @@ tests/
   dispatch/       route planner panels + map
   documents/      list + detail; WTN (wasteDemo); lifecycle (supabase)
   reports/        period/report tabs, charts — mock vs live implementations
-  settings/       all configuration sections (incl. About)
+  settings/       customer-facing sections (Organisation, Users & Roles,
+                  Pricing, Branding, Units, Integrations, System Status
+                  [supabase owner/admin], About) + removed-section guard
   branding/       co-branding: Powered-by credit, org identity, branding
                   settings UI, role access, persistence + reset (supabase)
   notifications/  bell, dropdown, filters, item actions
@@ -149,7 +151,8 @@ tests/
   fleet/          vehicles + field users lists
   driver/         mobile-only driver workflow (mobile-chrome project)
   admin/          org/users/pricing + role matrix (supabase)
-  regression/     raw-enum leak checks
+  regression/     raw-enum leak checks; prototype/developer leakage
+                  (VITE_*, preset ids, removed sections, /prototype routes)
   accessibility/  accessible names, form labels, dialog semantics
   live/           @routing-live, @xero-live (opt-in)
   presets/        per-preset branding/nav/terminology/settings/waste
@@ -206,6 +209,7 @@ pipeline should:
 - **"couldn't be located on this site"** — postcode lookup needs network
   access to postcodes.io.
 - **Preset assertions failing** — `CLIENT_PRESET` must equal the app's
-  `VITE_CLIENT_PRESET`; check the Settings "Active Preset" badge.
+  `VITE_CLIENT_PRESET`; the preset id is a build-time setting and is no
+  longer shown anywhere in the UI, so verify how the app was launched.
 - **Live tests time out** — they call real services; confirm
   `VITE_ORS_API_KEY`/Xero edge functions are deployed in the target env.

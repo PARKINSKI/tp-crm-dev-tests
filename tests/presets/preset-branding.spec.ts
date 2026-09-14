@@ -18,7 +18,7 @@ test.describe('preset branding', () => {
     await expect(appShell.logo).toBeVisible();
   });
 
-  test('document title reflects the preset organisation', async ({
+  test('document title is the product name', async ({
     appShell,
     page,
     preset,

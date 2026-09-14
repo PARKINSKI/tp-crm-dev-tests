@@ -22,9 +22,12 @@ test.describe('accessibility basics', () => {
       /^Notifications/,
     );
     await expect(page.getByLabel('Global search')).toBeVisible();
-    await expect(
-      appShell.sidebar.getByRole('button', { name: /sign out/i }),
-    ).toBeVisible();
+    if (isSupabase) {
+      // Sign out only renders when there is a real session.
+      await expect(
+        appShell.sidebar.getByRole('button', { name: /sign out/i }),
+      ).toBeVisible();
+    }
 
     // The bell dropdown exposes a labelled menu landmark.
     await appShell.notificationBell.click();

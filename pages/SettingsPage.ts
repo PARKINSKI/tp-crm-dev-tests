@@ -2,18 +2,21 @@ import { expect, Locator, Page } from '@playwright/test';
 import { BasePage } from './BasePage';
 
 /**
- * Settings screen — a read-only view of the active client preset:
- * organisation, branding, terminology, navigation order, users, feature
- * flags, statuses, units and integrations.
+ * Settings screen — the customer-facing settings surface: organisation,
+ * users & roles, pricing, branding, units (read-only reference),
+ * integrations, system status (supabase owner/admin only) and about.
  */
 export class SettingsPage extends BasePage {
   constructor(page: Page) {
     super(page);
   }
 
-  /** "Active Preset: <id>" badge in the page header. */
-  get activePresetBadge(): Locator {
-    return this.main.getByText(/^Active Preset:/);
+  /**
+   * The section chip strip above the section content — all chip buttons,
+   * located via the always-present 'Organisation' chip's container.
+   */
+  get sectionChips(): Locator {
+    return this.sectionChip('Organisation').locator('..').getByRole('button');
   }
 
   override async waitForReady(): Promise<void> {
@@ -28,7 +31,7 @@ export class SettingsPage extends BasePage {
     await this.waitForReady();
   }
 
-  /** Section chip, e.g. 'Organisation', 'Units', 'Features'. */
+  /** Section chip, e.g. 'Organisation', 'Units', 'Integrations'. */
   sectionChip(name: string): Locator {
     return this.main.getByRole('button', { name, exact: true });
   }

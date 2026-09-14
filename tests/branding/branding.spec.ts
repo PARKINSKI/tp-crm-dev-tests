@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { env, isSupabase, type RoleKey } from '../../config/env';
+import { isSupabase, type RoleKey } from '../../config/env';
 import { expect, test } from '../../fixtures/base';
 import { SettingsPage } from '../../pages/SettingsPage';
 import { loginAs, requireSupabase } from '../../utils/auth';
@@ -122,7 +122,7 @@ test.describe('co-branding', { tag: ['@branding', '@regression'] }, () => {
     await settings.expectRowValue('Organisation', preset.organisationName);
     await settings.expectRowValue('Primary Colour', preset.primaryColour);
     await expect(
-      page.getByText(/customisation is available in live mode/i),
+      page.getByText(/customisation is available for live organisations/i),
     ).toBeVisible();
     // No edit controls in demo mode.
     await expect(
@@ -145,40 +145,8 @@ test.describe('co-branding', { tag: ['@branding', '@regression'] }, () => {
     }
   });
 
-  /**
-   * The app gates developer diagnostics behind import.meta.env.DEV — the
-   * 'Active Preset' badge and VITE_* instructions only render on a dev
-   * server. This assertion therefore only runs against production builds
-   * (PROD_BUILD=1, e.g. staging). Note: a mock-mode prod build refuses to
-   * boot, so this check is meaningful only in supabase mode.
-   */
-  test('no developer implementation details on Settings', async ({
-    settings,
-    page,
-  }) => {
-    test.skip(
-      !env.isProdBuild || !isSupabase,
-      'requires a production build running supabase mode (PROD_BUILD=1 DATA_MODE=supabase)',
-    );
-
-    await settings.goto();
-    // The dev-instructions paragraph only renders in dev builds; also check
-    // every section for leaked internals.
-    const text = await settings.main.innerText();
-    for (const token of [
-      'VITE_CLIENT_PRESET',
-      'VITE_DATA_MODE',
-      'VITE_SUPABASE',
-      'src/config/clients/',
-      'Active Preset',
-      '.env.local',
-    ]) {
-      expect(
-        text.includes(token),
-        `developer detail "${token}" exposed in Settings`,
-      ).toBe(false);
-    }
-  });
+  // Developer-implementation leakage is covered unconditionally by
+  // tests/regression/prototype-leakage.spec.ts.
 });
 
 test.describe('branding role access', { tag: ['@branding', '@admin'] }, () => {
