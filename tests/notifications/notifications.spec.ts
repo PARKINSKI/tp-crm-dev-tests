@@ -56,9 +56,37 @@ test.describe('notifications', () => {
     if (await emptyState.isVisible()) {
       test.skip(true, 'no seeded notifications — add dev-notifications-seed.sql data');
     }
-    await items.first().click();
-    await expect(page).not.toHaveURL(/\/$/);
-    await expectNoAppError(page);
+
+    // Items with an actionPath navigate there; targetless notifications only
+    // mark themselves read. Both are correct — wait briefly for a possible
+    // navigation, then verify whichever behaviour applies.
+    const first = items.first();
+    const wasUnread = (await first.locator('[aria-label="Unread"]').count()) > 0;
+    const startUrl = page.url();
+    await first.click();
+    const navigated = await page
+      .waitForURL((u) => u.toString() !== startUrl, { timeout: 2_500 })
+      .then(() => true)
+      .catch(() => false);
+
+    if (navigated) {
+      // Navigated to the notification's target inside the app.
+      await expectNoAppError(page);
+    } else {
+      // No action target — the product correctly stays put and just marks
+      // the item read.
+      await expect(page).toHaveURL(startUrl);
+    }
+
+    if (wasUnread) {
+      // Read-state: reopen the bell — the same (newest-first) item must no
+      // longer carry its unread marker.
+      await appShell.notificationBell.click();
+      await expect(appShell.notificationMenu).toBeVisible();
+      await expect(
+        items.first().locator('[aria-label="Unread"]'),
+      ).toHaveCount(0);
+    }
   });
 
   test('notifications page filters and item actions render', async ({

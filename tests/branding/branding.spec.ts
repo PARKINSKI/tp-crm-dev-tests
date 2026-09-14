@@ -214,6 +214,9 @@ test.describe('branding persistence', { tag: ['@branding', '@regression'] }, () 
     page,
     preset,
   }) => {
+    // Performs three real writes plus a reload against hosted Supabase —
+    // legitimately slower than a single-assertion test.
+    test.slow();
     requireSupabase();
     await loginAs(page, 'owner');
     const settings = new SettingsPage(page);
@@ -228,15 +231,10 @@ test.describe('branding persistence', { tag: ['@branding', '@regression'] }, () 
     );
     await settings.selectSection('Branding');
     await settingsLoaded;
-    // The form patches values when the fetch resolves — two frames past the
-    // response guarantees React committed before we type (a late commit
-    // would clobber the fill).
-    await page.evaluate(
-      () =>
-        new Promise((resolve) =>
-          requestAnimationFrame(() => requestAnimationFrame(resolve)),
-        ),
-    );
+    // The form patches values in a .then after the response — wait for all
+    // network to go quiet so the commit has landed before typing (a late
+    // commit would clobber the fill back to the preset value).
+    await page.waitForLoadState('networkidle');
 
     const primary = brandingInput(page, 'Primary Colour');
     const original = await primary.inputValue();
@@ -265,7 +263,16 @@ test.describe('branding persistence', { tag: ['@branding', '@regression'] }, () 
       );
     } finally {
       // Restore the original value before attempting reset assertions.
-      if ((await primary.inputValue()) !== original) {
+      // The Branding section may not be mounted (e.g. a failure before the
+      // post-reload selectSection) — remount it and bound the read so
+      // cleanup can't consume the whole test budget.
+      if (!(await primary.isVisible().catch(() => false))) {
+        await settings.selectSection('Branding').catch(() => undefined);
+      }
+      const current = await primary
+        .inputValue({ timeout: 5_000 })
+        .catch(() => null);
+      if (current !== null && current !== original) {
         await primary.fill(original);
         await page.getByRole('button', { name: 'Save Branding' }).click();
         await expect(page.getByText('Branding saved.')).toBeVisible();
