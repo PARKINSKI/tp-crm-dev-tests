@@ -10,6 +10,9 @@ export class DocumentsPage extends ListPage {
   }
 
   async openFirstDocument(): Promise<void> {
+    // tbody renders a 'Loading…' placeholder row first — wait for a real
+    // data row (identifiable by its View action) before clicking.
+    await this.table.getByRole('button', { name: 'View' }).first().waitFor();
     await this.openFirstRow();
     await this.page.waitForURL(/\/documents\/.+/);
   }
@@ -40,6 +43,7 @@ export class WasteTransferNotesPage extends ListPage {
    * /documents/:id.
    */
   async openFirstNote(): Promise<void> {
+    await this.table.getByRole('button', { name: 'View' }).first().waitFor();
     await this.openFirstRow();
     await this.page.waitForURL(/\/(modules\/waste\/waste-transfer-notes|documents)\/.+/);
   }

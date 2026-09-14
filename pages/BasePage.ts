@@ -19,9 +19,9 @@ export abstract class BasePage {
     return this.page.getByRole('main');
   }
 
-  /** Primary (h1) page heading. */
+  /** Primary (h1) page heading inside the main landmark — the top banner also renders an h1. */
   get heading(): Locator {
-    return this.page.getByRole('heading', { level: 1 });
+    return this.main.getByRole('heading', { level: 1 });
   }
 
   /** Current page title (h1) rendered in the top header. */

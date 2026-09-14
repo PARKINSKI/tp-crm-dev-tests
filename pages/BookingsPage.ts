@@ -91,16 +91,26 @@ export class NewBookingPage extends BasePage {
     return this.main.getByRole('button', { name });
   }
 
+  /**
+   * The NewBooking form labels are not programmatically associated (no
+   * htmlFor) — locate by input type / placeholder instead of getByLabel.
+   * 'Request Date' is the only date input rendered by default ('Preferred
+   * Date' appears only when the specific-date window is chosen).
+   */
   get requestDateInput(): Locator {
-    return this.main.getByLabel('Request Date');
+    return this.main.locator('input[type="date"]').first();
   }
 
   get prioritySelect(): Locator {
-    return this.main.getByLabel('Priority');
+    return this.main
+      .locator('div')
+      .filter({ hasText: exactText('Priority') })
+      .getByRole('combobox')
+      .first();
   }
 
   get internalNotesInput(): Locator {
-    return this.main.getByLabel('Internal Notes');
+    return this.main.getByPlaceholder('Office-only notes...');
   }
 
   get createButton(): Locator {

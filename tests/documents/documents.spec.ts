@@ -62,6 +62,19 @@ test.describe('documents', () => {
     await expectNoAppError(page);
     await wtns.expectRows();
 
+    if (
+      isSupabase &&
+      (await page
+        .getByText(/No Waste Transfer Notes yet/i)
+        .isVisible()
+        .catch(() => false))
+    ) {
+      test.skip(
+        true,
+        'no waste_transfer_note documents seeded for this organisation',
+      );
+    }
+
     await wtns.openFirstNote();
 
     if (isSupabase) {

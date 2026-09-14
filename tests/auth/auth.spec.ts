@@ -1,7 +1,7 @@
 import { isSupabase } from '../../config/env';
 import { expect, test } from '../../fixtures/base';
 import { ForgotPasswordPage, LoginPage } from '../../pages/LoginPage';
-import { loginAs, requireCredentials, requireSupabase, signOut } from '../../utils/auth';
+import { requireCredentials, requireSupabase, signInThroughUi, signOut } from '../../utils/auth';
 import { NONEXISTENT_EMAIL } from '../../utils/testData';
 
 test.describe('authentication', () => {
@@ -71,7 +71,9 @@ test.describe('authentication', () => {
     appShell,
   }) => {
     requireCredentials('owner');
-    await loginAs(page, 'owner');
+    // Real form login — sign-out revokes the session, so this test must not
+    // use the shared stored auth state.
+    await signInThroughUi(page, 'owner');
 
     await appShell.expectPageHeading('Dashboard');
 
@@ -90,7 +92,7 @@ test.describe('authentication', () => {
 
   test('field user lands on the driver workflow', async ({ page }) => {
     requireCredentials('fieldUser');
-    await loginAs(page, 'fieldUser');
+    await signInThroughUi(page, 'fieldUser');
     await expect(page).toHaveURL(/\/driver/);
   });
 });

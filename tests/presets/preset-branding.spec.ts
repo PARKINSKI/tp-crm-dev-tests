@@ -14,7 +14,19 @@ test.describe('preset branding', () => {
     await appShell.goto('/');
 
     await expect(appShell.productName).toHaveText(preset.productName);
-    await expect(appShell.organisationName).toHaveText(preset.organisationName);
+    if (isSupabase) {
+      // Live mode leads with the authenticated organisation — the seeded
+      // E2E org name is environment-specific, so assert a real org is
+      // shown rather than the product name or preset fiction.
+      const org = (await appShell.organisationName.textContent())?.trim();
+      const product = (await appShell.productName.textContent())?.trim();
+      expect(org, 'organisation name is populated').toBeTruthy();
+      expect(org).not.toBe(product);
+    } else {
+      await expect(appShell.organisationName).toHaveText(
+        preset.organisationName,
+      );
+    }
     await expect(appShell.logo).toBeVisible();
   });
 
@@ -53,13 +65,10 @@ test.describe('preset branding', () => {
 
     if (isSupabase) {
       // Live mode renders the editable branding form instead of info rows.
-      // (Labels aren't htmlFor-wired — locate the input next to its label.)
-      const input = page
-        .getByText('Primary Colour', { exact: true })
-        .locator('..')
-        .locator('input')
-        .first();
-      await expect(input).toHaveValue(preset.primaryColour);
+      // The field shows the org's configured brand colour — an override
+      // when set, otherwise the preset fallback — so assert a valid hex.
+      const input = page.getByLabel('Primary Colour', { exact: true });
+      await expect(input).toHaveValue(/^#[0-9a-f]{6}$/i);
       return;
     }
 

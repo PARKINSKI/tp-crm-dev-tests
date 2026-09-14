@@ -119,6 +119,6 @@ export class SiteFormModal {
   }
 
   get submitButton(): Locator {
-    return this.form.getByRole('button', { name: /Create Site|Save Site/ });
+    return this.form.getByRole('button', { name: /Add Site|Create Site|Save Site/ });
   }
 }

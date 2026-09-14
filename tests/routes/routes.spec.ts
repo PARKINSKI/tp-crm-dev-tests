@@ -1,3 +1,4 @@
+import { isSupabase } from '../../config/env';
 import { expect, test } from '../../fixtures/base';
 import { RouteDetailPage, RoutesPage } from '../../pages/RoutesPage';
 import { loginAs } from '../../utils/auth';
@@ -35,7 +36,18 @@ test.describe('routes', () => {
   test('a route opens showing stops and the route map', async ({ page }) => {
     const routes = new RoutesPage(page);
     await routes.goto();
-    await routes.openFirstRoute();
+    if (isSupabase) {
+      // Seeded E2E-RT-001 'Swansea Service Route' carries planned ETAs —
+      // open it deterministically: 'first row' is unstable under parallel
+      // runs (route-manage may create a same-day route).
+      await routes.rows
+        .filter({ hasText: 'Swansea Service Route' })
+        .first()
+        .click();
+      await page.waitForURL(/\/routes\/.+/);
+    } else {
+      await routes.openFirstRoute();
+    }
 
     const detail = new RouteDetailPage(page);
     await detail.waitForReady();

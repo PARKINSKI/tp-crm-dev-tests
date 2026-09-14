@@ -52,7 +52,8 @@ test.describe('route management', () => {
     // Reorder/remove controls are available on editable routes.
     await expect(detail.removeStopButtons.first()).toBeVisible();
 
-    // Cleanup: remove the added stop again.
+    // Cleanup: remove the added stop again (accepts the confirm dialog).
+    page.once('dialog', (d) => void d.accept());
     await detail.removeStopButtons.first().click();
     await expect(detail.main.getByText('No stops on this route yet.'))
       .toBeVisible();

@@ -69,16 +69,29 @@ test.describe('customer management', () => {
     const siteModal = new SiteFormModal(page);
     await siteModal.nameInput.fill(siteName);
     await siteModal.postcodeInput.fill('SA1 8QY');
+    // Leaving the postcode field auto-runs the geocode lookup, which inserts
+    // a status line and shifts the footer — settle it before clicking submit.
+    await siteModal.postcodeInput.press('Tab');
+    await expect(
+      page.getByRole('status').filter({
+        hasText: /location found|not found|unable to look up/i,
+      }),
+    ).toBeVisible();
     await siteModal.submitButton.click();
 
     await expect(siteModal.submitButton).toBeHidden();
     await expect(detail.main.getByText(siteName)).toBeVisible();
 
-    // Cleanup: archive the site (accepts the confirm dialog).
-    const siteRow = detail.main.locator('tr').filter({ hasText: siteName });
+    // Cleanup: archive the site (accepts the confirm dialog). Sites render
+    // as cards, not table rows — scope by the card containing the name.
+    const siteCard = detail.main
+      .locator('div')
+      .filter({ has: page.getByText(siteName) })
+      .filter({ has: page.getByRole('button', { name: 'Archive' }) })
+      .last();
     page.once('dialog', (d) => void d.accept());
-    await siteRow.getByRole('button', { name: 'Archive' }).click();
-    await expect(siteRow.getByText('Archived')).toBeVisible();
+    await siteCard.getByRole('button', { name: 'Archive' }).click();
+    await expect(siteCard.getByText('Archived').first()).toBeVisible();
   });
 
   test('invalid postcode surfaces a location warning', async ({ page }) => {
@@ -94,7 +107,11 @@ test.describe('customer management', () => {
     await siteModal.postcodeInput.fill('ZZ9 9ZZ');
     await page.getByRole('button', { name: 'Find Location' }).click();
 
-    await expect(page.getByRole('status')).toBeVisible();
+    // The page has other role="status" live regions (e.g. map loading) —
+    // target the postcode/location feedback specifically.
+    await expect(
+      page.getByRole('status').filter({ hasText: /postcode|location/i }),
+    ).toBeVisible();
 
     // Close without saving — nothing created.
     await page.getByRole('button', { name: 'Cancel' }).click();

@@ -96,14 +96,27 @@ test.describe('prototype/developer leakage', { tag: '@regression' }, () => {
     }
   });
 
-  test('sign-in screen shows no implementation terms', async ({ page }) => {
+  test('sign-in screen shows no implementation terms', async ({
+    browser,
+  }) => {
     requireSupabase();
-    await page.goto('/login');
-    await expect(
-      page.getByRole('button', { name: 'Sign in', exact: true }),
-    ).toBeVisible();
+    // Use a fresh unauthenticated context — the describe's loginAs seeds a
+    // session via init scripts that re-apply on every navigation.
+    const ctx = await browser.newContext({ baseURL: env.baseUrl });
+    const page = await ctx.newPage();
+    try {
+      await page.goto('/login');
+      await expect(
+        page.getByRole('button', { name: 'Sign in', exact: true }),
+      ).toBeVisible();
 
-    expectNoForbiddenTokens(await page.locator('body').innerText(), 'login');
+      expectNoForbiddenTokens(
+        await page.locator('body').innerText(),
+        'login',
+      );
+    } finally {
+      await ctx.close();
+    }
   });
 
   test('no navigation links point at prototype routes', async ({

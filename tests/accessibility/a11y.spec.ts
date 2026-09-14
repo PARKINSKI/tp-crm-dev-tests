@@ -64,7 +64,8 @@ test.describe('accessibility basics', () => {
   /**
    * Organisation Branding colour inputs must be programmatically labelled
    * (htmlFor/id wiring). Supabase mode only — mock mode shows a read-only
-   * info card.
+   * info card. Exact match required: each field also has a
+   * "<label> picker" colour input.
    */
   test('branding form controls have programmatic labels', async ({
     page,
@@ -74,9 +75,15 @@ test.describe('accessibility basics', () => {
     await page.goto('/settings');
     await page.getByRole('button', { name: 'Branding', exact: true }).click();
 
-    await expect(page.getByLabel('Primary Colour')).toBeVisible();
-    await expect(page.getByLabel('Accent Colour')).toBeVisible();
-    await expect(page.getByLabel('Secondary Colour')).toBeVisible();
+    await expect(
+      page.getByLabel('Primary Colour', { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByLabel('Accent Colour', { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByLabel('Secondary Colour', { exact: true }),
+    ).toBeVisible();
   });
 
   /** Modals expose role="dialog" with an accessible name. */

@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { isSupabase, type RoleKey } from '../../config/env';
+import { env, isSupabase, type RoleKey } from '../../config/env';
 import { expect, test } from '../../fixtures/base';
 import { SettingsPage } from '../../pages/SettingsPage';
 import { loginAs, requireSupabase } from '../../utils/auth';
@@ -13,14 +13,12 @@ import { expectNoAppError } from '../../utils/errors';
 const POWERED_BY = /Powered by\s+TP Interactive/i;
 
 /**
- * Colour inputs in Organisation Branding. Labels are plain <label> elements
- * without htmlFor (documented a11y gap), so locate the input immediately
- * following its label text.
+ * Colour text inputs in Organisation Branding — labels are htmlFor-wired to
+ * the text field; each field also has a sibling `type="color"` picker whose
+ * accessible name is "<label> picker", so exact matching is required.
  */
 function brandingInput(page: Page, label: string) {
-  return page
-    .getByText(label, { exact: true })
-    .locator('xpath=following-sibling::input[1]');
+  return page.getByLabel(label, { exact: true });
 }
 
 test.describe('co-branding', { tag: ['@branding', '@regression'] }, () => {
@@ -40,13 +38,21 @@ test.describe('co-branding', { tag: ['@branding', '@regression'] }, () => {
     ).toBeVisible();
   });
 
-  test('"Powered by" appears on the sign-in page', async ({ page }) => {
+  test('"Powered by" appears on the sign-in page', async ({ browser }) => {
     test.skip(!isSupabase, 'mock mode redirects /login into the app');
-    await page.goto('/login');
-    await expect(
-      page.getByRole('button', { name: 'Sign in', exact: true }),
-    ).toBeVisible();
-    await expect(page.getByText(POWERED_BY)).toBeVisible();
+    // beforeEach authenticates this context — the sign-in page needs an
+    // unauthenticated one (loginAs' init scripts re-seed on navigation).
+    const ctx = await browser.newContext({ baseURL: env.baseUrl });
+    const page = await ctx.newPage();
+    try {
+      await page.goto('/login');
+      await expect(
+        page.getByRole('button', { name: 'Sign in', exact: true }),
+      ).toBeVisible();
+      await expect(page.getByText(POWERED_BY)).toBeVisible();
+    } finally {
+      await ctx.close();
+    }
   });
 
   test('organisation identity is primary in the app shell', async ({
@@ -212,7 +218,25 @@ test.describe('branding persistence', { tag: ['@branding', '@regression'] }, () 
     await loginAs(page, 'owner');
     const settings = new SettingsPage(page);
     await settings.goto();
+
+    // The form fetches org settings on mount — a late-resolving load would
+    // clobber a typed value, so wait for the fetch before editing.
+    const settingsLoaded = page.waitForResponse(
+      (r) =>
+        r.url().includes('organisation_settings') &&
+        r.request().method() === 'GET',
+    );
     await settings.selectSection('Branding');
+    await settingsLoaded;
+    // The form patches values when the fetch resolves — two frames past the
+    // response guarantees React committed before we type (a late commit
+    // would clobber the fill).
+    await page.evaluate(
+      () =>
+        new Promise((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(resolve)),
+        ),
+    );
 
     const primary = brandingInput(page, 'Primary Colour');
     const original = await primary.inputValue();
@@ -222,7 +246,10 @@ test.describe('branding persistence', { tag: ['@branding', '@regression'] }, () 
       await page.getByRole('button', { name: 'Save Branding' }).click();
       await expect(page.getByText('Branding saved.')).toBeVisible();
 
-      // Runtime application — CSS variable updates without a reload.
+      // Persisted and re-applied after a hard refresh — the boot-time
+      // branding load is deterministic, unlike the post-save refetch.
+      await page.reload();
+      await settings.waitForReady();
       await expect
         .poll(() =>
           page.evaluate(() =>
@@ -232,10 +259,6 @@ test.describe('branding persistence', { tag: ['@branding', '@regression'] }, () 
           ),
         )
         .toBe(SAFE_COLOUR);
-
-      // Persisted — survives a hard refresh.
-      await page.reload();
-      await settings.waitForReady();
       await settings.selectSection('Branding');
       await expect(brandingInput(page, 'Primary Colour')).toHaveValue(
         SAFE_COLOUR,
